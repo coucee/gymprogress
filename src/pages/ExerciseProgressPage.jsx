@@ -3,6 +3,8 @@ import { ArrowLeft, ChartSpline, LogOut } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Button } from '../components/ui/button.jsx'
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card.jsx'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../state/AuthContext.jsx'
 
@@ -26,10 +28,7 @@ export function ExerciseProgressPage() {
       setLoading(true)
       setError('')
 
-      const { data, error: exerciseError } = await supabase
-        .from('exercises')
-        .select('id,name')
-        .order('name')
+      const { data, error: exerciseError } = await supabase.from('exercises').select('id,name').order('name')
 
       if (!mounted) return
 
@@ -109,8 +108,8 @@ export function ExerciseProgressPage() {
         const weight = Number(row.weight_kg)
         const reps = Number(row.reps)
         const estimatedOneRepMax = weight * (1 + reps / 30)
-
         const existing = dayMap.get(date) ?? { date, maxWeight: 0, estimatedOneRepMax: 0 }
+
         existing.maxWeight = Math.max(existing.maxWeight, weight)
         existing.estimatedOneRepMax = Math.max(existing.estimatedOneRepMax, estimatedOneRepMax)
         dayMap.set(date, existing)
@@ -155,109 +154,106 @@ export function ExerciseProgressPage() {
   return (
     <div className="min-h-screen bg-slate-100">
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4">
-          <h1 className="text-xl font-semibold text-slate-900">Exercise Progress</h1>
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-3 py-3 sm:px-4">
+          <h1 className="text-lg font-semibold text-slate-900 sm:text-xl">Exercise Progress</h1>
           <div className="flex items-center gap-2">
-            <Link
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              to="/dashboard"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Dashboard
-            </Link>
-            <button
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              onClick={handleLogout}
-              type="button"
-            >
+            <Button asChild variant="outline" size="sm">
+              <Link to="/dashboard">
+                <ArrowLeft className="h-4 w-4" />
+                Dashboard
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleLogout} type="button">
               <LogOut className="h-4 w-4" />
               Logout
-            </button>
+            </Button>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto grid w-full max-w-6xl gap-4 px-4 py-6 md:grid-cols-[280px_1fr]">
+      <main className="mx-auto grid w-full max-w-6xl gap-4 px-3 py-4 sm:px-4 sm:py-6 md:grid-cols-[280px_1fr]">
         {error ? (
-          <section className="rounded-xl border border-red-300 bg-red-50 p-4 text-red-700 md:col-span-2">
-            {error}
-          </section>
+          <Card className="border-red-300 bg-red-50 md:col-span-2">
+            <CardContent className="p-4 text-red-700">{error}</CardContent>
+          </Card>
         ) : null}
 
-        <section className="rounded-xl bg-white p-4 shadow-sm">
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">Exercises</h2>
-          <div className="space-y-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm uppercase tracking-wide text-slate-500">Exercises</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
             {exercises.length === 0 ? (
               <p className="text-sm text-slate-600">No exercises yet. Add one on the dashboard.</p>
             ) : (
               exercises.map((exercise) => {
                 const active = String(exercise.id) === selectedExerciseId
                 return (
-                  <button
-                    className={`w-full rounded-lg px-3 py-2 text-left text-sm ${
-                      active
-                        ? 'bg-blue-600 text-white'
-                        : 'border border-slate-300 text-slate-700 hover:bg-slate-50'
-                    }`}
+                  <Button
+                    className="w-full justify-start"
                     key={exercise.id}
                     onClick={() => setSelectedExerciseId(String(exercise.id))}
                     type="button"
+                    variant={active ? 'default' : 'outline'}
                   >
                     {exercise.name}
-                  </button>
+                  </Button>
                 )
               })
             )}
-          </div>
-        </section>
+          </CardContent>
+        </Card>
 
-        <section className="rounded-xl bg-white p-5 shadow-sm">
-          <div className="mb-3 flex items-center gap-2 text-slate-800">
-            <ChartSpline className="h-4 w-4" />
-            <h2 className="font-medium">{selectedExerciseName} Trend</h2>
-          </div>
-
-          {chartError ? <p className="text-sm text-red-700">{chartError}</p> : null}
-
-          {chartLoading ? (
-            <p className="text-sm text-slate-600">Loading chart...</p>
-          ) : chartData.length === 0 ? (
-            <p className="text-sm text-slate-600">No logged sets for this exercise yet.</p>
-          ) : (
-            <div className="h-80 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
-                  <XAxis dataKey="label" minTickGap={24} tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} width={40} />
-                  <Tooltip
-                    formatter={(value, name) =>
-                      name === 'estimatedOneRepMax'
-                        ? [`${value} kg`, 'Estimated 1RM']
-                        : [`${value} kg`, 'Max Weight']
-                    }
-                    labelFormatter={(_, payload) => payload?.[0]?.payload?.date ?? ''}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="estimatedOneRepMax"
-                    stroke="#2563eb"
-                    strokeWidth={3}
-                    dot={{ r: 3 }}
-                    activeDot={{ r: 5 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="maxWeight"
-                    stroke="#059669"
-                    strokeWidth={3}
-                    dot={{ r: 3 }}
-                    activeDot={{ r: 5 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2 text-slate-800">
+              <ChartSpline className="h-4 w-4" />
+              <CardTitle>{selectedExerciseName} Trend</CardTitle>
             </div>
-          )}
-        </section>
+          </CardHeader>
+          <CardContent>
+            {chartError ? <p className="text-sm text-red-700">{chartError}</p> : null}
+
+            {chartLoading ? (
+              <p className="text-sm text-slate-600">Loading chart...</p>
+            ) : chartData.length === 0 ? (
+              <p className="text-sm text-slate-600">No logged sets for this exercise yet.</p>
+            ) : (
+              <div className="h-80 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={chartData}>
+                    <XAxis dataKey="label" minTickGap={24} tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} width={40} />
+                    <Tooltip
+                      formatter={(value, name) =>
+                        name === 'estimatedOneRepMax'
+                          ? [`${value} kg`, 'Estimated 1RM']
+                          : [`${value} kg`, 'Max Weight']
+                      }
+                      labelFormatter={(_, payload) => payload?.[0]?.payload?.date ?? ''}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="estimatedOneRepMax"
+                      stroke="#2563eb"
+                      strokeWidth={3}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 5 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="maxWeight"
+                      stroke="#059669"
+                      strokeWidth={3}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 5 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </main>
     </div>
   )
