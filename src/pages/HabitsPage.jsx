@@ -1,11 +1,12 @@
 import { addDays, format, subDays } from 'date-fns'
-import { ArrowLeft, ChartNoAxesCombined, Check, LogOut, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, ChartNoAxesCombined, Check, LogOut, Pencil, Plus, Save, Trash2, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/button.jsx'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card.jsx'
 import { Input } from '../components/ui/input.jsx'
 import { Label } from '../components/ui/label.jsx'
+import { Textarea } from '../components/ui/textarea.jsx'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../state/AuthContext.jsx'
 
@@ -17,10 +18,15 @@ export function HabitsPage() {
   const [supported, setSupported] = useState(true)
   const [habits, setHabits] = useState([])
   const [logs, setLogs] = useState([])
+
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+
+  const [editingHabitId, setEditingHabitId] = useState('')
+  const [editingDescription, setEditingDescription] = useState('')
+  const [updatingDescription, setUpdatingDescription] = useState(false)
 
   const today = todayDate()
   const recentDays = useMemo(
@@ -75,6 +81,7 @@ export function HabitsPage() {
 
   async function refreshData() {
     if (!user || !supported) return
+
     const [habitRes, logRes] = await Promise.all([
       supabase.from('habits').select('id,name,description,is_active').eq('user_id', user.id).order('created_at'),
       supabase
@@ -84,6 +91,7 @@ export function HabitsPage() {
         .gte('log_date', format(subDays(new Date(), 29), 'yyyy-MM-dd'))
         .lte('log_date', format(addDays(new Date(), 1), 'yyyy-MM-dd')),
     ])
+
     if (!habitRes.error) setHabits(habitRes.data ?? [])
     if (!logRes.error) setLogs(logRes.data ?? [])
   }
@@ -94,21 +102,24 @@ export function HabitsPage() {
 
   async function toggleHabitToday(habit) {
     if (!user) return
+
     const next = !isCompleted(habit.id, today)
     const { error: upsertError } = await supabase.from('habit_logs').upsert(
       [{ user_id: user.id, habit_id: habit.id, log_date: today, completed: next }],
       { onConflict: 'user_id,habit_id,log_date' },
     )
+
     if (upsertError) {
       setMessage(upsertError.message)
       return
     }
+
     await refreshData()
   }
 
-  async function handleCreateHabit(event) {
-    event.preventDefault()
+  async function createHabit() {
     if (!user || !supported) return
+
     const trimmed = name.trim()
     if (!trimmed) {
       setMessage('Habit name is required.')
@@ -117,14 +128,17 @@ export function HabitsPage() {
 
     setSaving(true)
     setMessage('')
+
     const { error: createError } = await supabase
       .from('habits')
       .insert([{ user_id: user.id, name: trimmed, description: description.trim() || null }])
+
     if (createError) {
       setMessage(createError.message)
       setSaving(false)
       return
     }
+
     setName('')
     setDescription('')
     setSaving(false)
@@ -132,29 +146,81 @@ export function HabitsPage() {
     await refreshData()
   }
 
+  async function handleCreateHabit(event) {
+    event.preventDefault()
+    await createHabit()
+  }
+
+  async function handleDescriptionKeyDown(event) {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault()
+      await createHabit()
+    }
+  }
+
   async function toggleHabitActive(habit) {
     if (!user || !supported) return
+
     const { error: updateError } = await supabase
       .from('habits')
       .update({ is_active: !habit.is_active })
       .eq('id', habit.id)
       .eq('user_id', user.id)
+
     if (updateError) {
       setMessage(updateError.message)
       return
     }
+
     await refreshData()
   }
 
   async function deleteHabit(habit) {
     if (!user || !supported) return
     if (!window.confirm(`Delete "${habit.name}"?`)) return
+
     const { error: deleteError } = await supabase.from('habits').delete().eq('id', habit.id).eq('user_id', user.id)
+
     if (deleteError) {
       setMessage(deleteError.message)
       return
     }
+
     setMessage('Habit deleted.')
+    await refreshData()
+  }
+
+  function startEditingDescription(habit) {
+    setEditingHabitId(String(habit.id))
+    setEditingDescription(habit.description ?? '')
+    setMessage('')
+  }
+
+  function cancelEditingDescription() {
+    setEditingHabitId('')
+    setEditingDescription('')
+  }
+
+  async function saveHabitDescription(habit) {
+    if (!user || !supported) return
+
+    setUpdatingDescription(true)
+
+    const { error: updateError } = await supabase
+      .from('habits')
+      .update({ description: editingDescription.trim() || null })
+      .eq('id', habit.id)
+      .eq('user_id', user.id)
+
+    if (updateError) {
+      setMessage(updateError.message)
+      setUpdatingDescription(false)
+      return
+    }
+
+    setMessage('Habit description updated.')
+    setUpdatingDescription(false)
+    cancelEditingDescription()
     await refreshData()
   }
 
@@ -217,7 +283,9 @@ export function HabitsPage() {
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <p className="font-medium text-slate-900">{habit.name}</p>
-                        {habit.description ? <p className="mt-1 text-sm text-slate-600">{habit.description}</p> : null}
+                        {habit.description ? (
+                          <p className="mt-1 text-sm text-slate-600 whitespace-pre-line">{habit.description}</p>
+                        ) : null}
                       </div>
                       <span
                         className={`inline-flex h-6 w-6 items-center justify-center rounded-md border ${
@@ -296,12 +364,15 @@ export function HabitsPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="habit-description">Description</Label>
-                <Input
+                <Textarea
                   id="habit-description"
                   value={description}
                   onChange={(event) => setDescription(event.target.value)}
+                  onKeyDown={handleDescriptionKeyDown}
                   placeholder="Do this before bed"
+                  rows={3}
                 />
+                <p className="text-xs text-slate-500">Press Enter to create. Shift+Enter for a new line.</p>
               </div>
               <Button type="submit" disabled={saving}>
                 <Plus className="h-4 w-4" />
@@ -319,12 +390,43 @@ export function HabitsPage() {
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <p className="font-medium text-slate-900">{habit.name}</p>
-                          {habit.description ? <p className="text-sm text-slate-600">{habit.description}</p> : null}
+                          {editingHabitId === String(habit.id) ? (
+                            <div className="mt-2 space-y-2">
+                              <Textarea
+                                value={editingDescription}
+                                onChange={(event) => setEditingDescription(event.target.value)}
+                                rows={3}
+                              />
+                              <div className="flex gap-2">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={() => saveHabitDescription(habit)}
+                                  disabled={updatingDescription}
+                                >
+                                  <Save className="h-4 w-4" />
+                                  {updatingDescription ? 'Saving...' : 'Save'}
+                                </Button>
+                                <Button type="button" size="sm" variant="outline" onClick={cancelEditingDescription}>
+                                  <X className="h-4 w-4" />
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          ) : habit.description ? (
+                            <p className="text-sm text-slate-600 whitespace-pre-line">{habit.description}</p>
+                          ) : (
+                            <p className="text-sm text-slate-500">No description.</p>
+                          )}
                           <p className="mt-1 text-xs text-slate-500">
                             Status: {habit.is_active ? 'Active' : 'Archived'}
                           </p>
                         </div>
                         <div className="flex gap-2">
+                          <Button type="button" size="sm" variant="outline" onClick={() => startEditingDescription(habit)}>
+                            <Pencil className="h-4 w-4" />
+                            Edit
+                          </Button>
                           <Button type="button" size="sm" variant="outline" onClick={() => toggleHabitActive(habit)}>
                             {habit.is_active ? 'Archive' : 'Activate'}
                           </Button>
