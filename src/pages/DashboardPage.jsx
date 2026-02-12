@@ -1,5 +1,18 @@
 import { addDays, format, parseISO, subDays } from 'date-fns'
-import { Activity, ChartSpline, LogOut, Minus, Pencil, Plus, Save, Scale, Trash2, Utensils, X } from 'lucide-react'
+import {
+  Activity,
+  ChartSpline,
+  ListChecks,
+  LogOut,
+  Minus,
+  Pencil,
+  Plus,
+  Save,
+  Scale,
+  Trash2,
+  Utensils,
+  X,
+} from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
@@ -565,6 +578,12 @@ export function DashboardPage() {
               <Link to="/progress">
                 <ChartSpline className="h-4 w-4" />
                 Progress
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/habits">
+                <ListChecks className="h-4 w-4" />
+                Habits
               </Link>
             </Button>
             <Button variant="outline" size="sm" onClick={handleLogout} type="button">

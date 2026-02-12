@@ -3,6 +3,7 @@ import { ProtectedRoute } from './components/ProtectedRoute.jsx'
 import { PublicOnlyRoute } from './components/PublicOnlyRoute.jsx'
 import { DashboardPage } from './pages/DashboardPage.jsx'
 import { ExerciseProgressPage } from './pages/ExerciseProgressPage.jsx'
+import { HabitsPage } from './pages/HabitsPage.jsx'
 import { LoginPage } from './pages/LoginPage.jsx'
 import { SignupPage } from './pages/SignupPage.jsx'
 
@@ -31,6 +32,14 @@ function App() {
           element={
             <ProtectedRoute>
               <ExerciseProgressPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/habits"
+          element={
+            <ProtectedRoute>
+              <HabitsPage />
             </ProtectedRoute>
           }
         />
