@@ -28,6 +28,7 @@ export function HabitsPage() {
   const [editingHabitId, setEditingHabitId] = useState('')
   const [editingDescription, setEditingDescription] = useState('')
   const [updatingDescription, setUpdatingDescription] = useState(false)
+  const [showMobileTable, setShowMobileTable] = useState(false)
 
   const today = todayDate()
   const recentDays = useMemo(
@@ -240,7 +241,7 @@ export function HabitsPage() {
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-3 py-3 sm:px-4">
           <h1 className="text-lg font-semibold text-slate-900 sm:text-xl">Habit Tracker</h1>
           <div className="flex items-center gap-2">
-            <Button asChild variant="outline" size="sm">
+            <Button asChild variant="outline" size="sm" className="hidden md:inline-flex">
               <Link to="/dashboard">
                 <ArrowLeft className="h-4 w-4" />
                 Dashboard
@@ -309,41 +310,36 @@ export function HabitsPage() {
               <ChartNoAxesCombined className="h-4 w-4" />
               <CardTitle>Consistency Table (7 days)</CardTitle>
             </div>
+            <CardDescription className="md:hidden">
+              Optional on mobile. Habit logging above is the main priority.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
-            {habits.length === 0 ? (
-              <p className="text-sm text-slate-600">No habits yet.</p>
-            ) : (
-              <table className="w-full min-w-[680px] text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200 text-left text-slate-600">
-                    <th className="px-2 py-2">Habit</th>
-                    {recentDays.map((day) => (
-                      <th key={day} className="px-2 py-2">
-                        {format(new Date(`${day}T00:00:00`), 'EEE')}
-                      </th>
-                    ))}
-                    <th className="px-2 py-2">7d Rate</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {habits.map((habit) => {
-                    const hits = recentDays.filter((day) => isCompleted(habit.id, day)).length
-                    return (
-                      <tr key={habit.id} className="border-b border-slate-100">
-                        <td className="px-2 py-2 font-medium text-slate-900">{habit.name}</td>
-                        {recentDays.map((day) => (
-                          <td key={`${habit.id}-${day}`} className="px-2 py-2">
-                            {isCompleted(habit.id, day) ? '✓' : '·'}
-                          </td>
-                        ))}
-                        <td className="px-2 py-2">{Math.round((hits / recentDays.length) * 100)}%</td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            )}
+          <CardContent className="space-y-3">
+            <div className="md:hidden">
+              <Button type="button" variant="outline" onClick={() => setShowMobileTable((prev) => !prev)}>
+                {showMobileTable ? 'Hide 7-day table' : 'Show 7-day table'}
+              </Button>
+            </div>
+
+            {habits.length === 0 ? <p className="text-sm text-slate-600">No habits yet.</p> : null}
+
+            {habits.length > 0 && showMobileTable ? (
+              <div className="overflow-x-auto md:hidden">
+                <HabitTable habits={habits} recentDays={recentDays} isCompleted={isCompleted} />
+              </div>
+            ) : null}
+
+            {habits.length > 0 && !showMobileTable ? (
+              <p className="text-sm text-slate-600 md:hidden">
+                Table hidden on mobile. Tap “Show 7-day table” if needed.
+              </p>
+            ) : null}
+
+            {habits.length > 0 ? (
+              <div className="hidden overflow-x-auto md:block">
+                <HabitTable habits={habits} recentDays={recentDays} isCompleted={isCompleted} />
+              </div>
+            ) : null}
           </CardContent>
         </Card>
 
@@ -423,7 +419,7 @@ export function HabitsPage() {
                             Status: {habit.is_active ? 'Active' : 'Archived'}
                           </p>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           <Button type="button" size="sm" variant="outline" onClick={() => startEditingDescription(habit)}>
                             <Pencil className="h-4 w-4" />
                             Edit
@@ -454,4 +450,38 @@ export function HabitsPage() {
 
 function todayDate() {
   return format(new Date(), 'yyyy-MM-dd')
+}
+
+function HabitTable({ habits, recentDays, isCompleted }) {
+  return (
+    <table className="w-full min-w-[680px] text-sm">
+      <thead>
+        <tr className="border-b border-slate-200 text-left text-slate-600">
+          <th className="px-2 py-2">Habit</th>
+          {recentDays.map((day) => (
+            <th key={day} className="px-2 py-2">
+              {format(new Date(`${day}T00:00:00`), 'EEE')}
+            </th>
+          ))}
+          <th className="px-2 py-2">7d Rate</th>
+        </tr>
+      </thead>
+      <tbody>
+        {habits.map((habit) => {
+          const hits = recentDays.filter((day) => isCompleted(habit.id, day)).length
+          return (
+            <tr key={habit.id} className="border-b border-slate-100">
+              <td className="px-2 py-2 font-medium text-slate-900">{habit.name}</td>
+              {recentDays.map((day) => (
+                <td key={`${habit.id}-${day}`} className="px-2 py-2">
+                  {isCompleted(habit.id, day) ? '✓' : '·'}
+                </td>
+              ))}
+              <td className="px-2 py-2">{Math.round((hits / recentDays.length) * 100)}%</td>
+            </tr>
+          )
+        })}
+      </tbody>
+    </table>
+  )
 }
