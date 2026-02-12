@@ -4,6 +4,7 @@ import { PublicOnlyRoute } from './components/PublicOnlyRoute.jsx'
 import { DashboardPage } from './pages/DashboardPage.jsx'
 import { ExerciseProgressPage } from './pages/ExerciseProgressPage.jsx'
 import { HabitsPage } from './pages/HabitsPage.jsx'
+import { PlansPage } from './pages/PlansPage.jsx'
 import { LoginPage } from './pages/LoginPage.jsx'
 import { SignupPage } from './pages/SignupPage.jsx'
 
@@ -40,6 +41,14 @@ function App() {
           element={
             <ProtectedRoute>
               <HabitsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/plans"
+          element={
+            <ProtectedRoute>
+              <PlansPage />
             </ProtectedRoute>
           }
         />

@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { Button } from '../components/ui/button.jsx'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card.jsx'
+import { MobileBottomNav } from '../components/MobileBottomNav.jsx'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../state/AuthContext.jsx'
 
@@ -171,7 +172,7 @@ export function ExerciseProgressPage() {
         </div>
       </header>
 
-      <main className="mx-auto grid w-full max-w-6xl gap-4 px-3 py-4 sm:px-4 sm:py-6 md:grid-cols-[280px_1fr]">
+      <main className="mx-auto grid w-full max-w-6xl gap-4 px-3 py-4 pb-24 sm:px-4 sm:py-6 md:grid-cols-[280px_1fr] md:pb-6">
         {error ? (
           <Card className="border-red-300 bg-red-50 md:col-span-2">
             <CardContent className="p-4 text-red-700">{error}</CardContent>
@@ -255,6 +256,7 @@ export function ExerciseProgressPage() {
           </CardContent>
         </Card>
       </main>
+      <MobileBottomNav />
     </div>
   )
 }

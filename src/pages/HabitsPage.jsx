@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../co
 import { Input } from '../components/ui/input.jsx'
 import { Label } from '../components/ui/label.jsx'
 import { Textarea } from '../components/ui/textarea.jsx'
+import { MobileBottomNav } from '../components/MobileBottomNav.jsx'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../state/AuthContext.jsx'
 
@@ -253,7 +254,7 @@ export function HabitsPage() {
         </div>
       </header>
 
-      <main className="mx-auto grid w-full max-w-6xl gap-4 px-3 py-4 sm:px-4 sm:py-6">
+      <main className="mx-auto grid w-full max-w-6xl gap-4 px-3 py-4 pb-24 sm:px-4 sm:py-6 md:pb-6">
         {error ? (
           <Card className="border-red-300 bg-red-50">
             <CardContent className="p-4 text-red-700">{error}</CardContent>
@@ -446,6 +447,7 @@ export function HabitsPage() {
 
         {message ? <p className="text-sm text-slate-700">{message}</p> : null}
       </main>
+      <MobileBottomNav />
     </div>
   )
 }

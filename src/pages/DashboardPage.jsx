@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from '../components/ui/select.jsx'
 import { Textarea } from '../components/ui/textarea.jsx'
+import { MobileBottomNav } from '../components/MobileBottomNav.jsx'
 import { supabase } from '../lib/supabase.js'
 import { useAuth } from '../state/AuthContext.jsx'
 
@@ -574,17 +575,20 @@ export function DashboardPage() {
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-3 py-3 sm:px-4">
           <h1 className="text-lg font-semibold text-slate-900 sm:text-xl">GymProgress</h1>
           <div className="flex items-center gap-2">
-            <Button asChild variant="outline" size="sm">
+            <Button asChild variant="outline" size="sm" className="hidden md:inline-flex">
               <Link to="/progress">
                 <ChartSpline className="h-4 w-4" />
                 Progress
               </Link>
             </Button>
-            <Button asChild variant="outline" size="sm">
+            <Button asChild variant="outline" size="sm" className="hidden md:inline-flex">
               <Link to="/habits">
                 <ListChecks className="h-4 w-4" />
                 Habits
               </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm" className="hidden md:inline-flex">
+              <Link to="/plans">Plans</Link>
             </Button>
             <Button variant="outline" size="sm" onClick={handleLogout} type="button">
               <LogOut className="h-4 w-4" />
@@ -594,7 +598,7 @@ export function DashboardPage() {
         </div>
       </header>
 
-      <main className="mx-auto grid w-full max-w-6xl gap-4 px-3 py-4 sm:px-4 sm:py-6 md:grid-cols-3">
+      <main className="mx-auto grid w-full max-w-6xl gap-4 px-3 py-4 pb-24 sm:px-4 sm:py-6 md:grid-cols-3 md:pb-6">
         {pageError ? (
           <Card className="border-red-300 bg-red-50 md:col-span-3">
             <CardContent className="p-4 text-red-700">{pageError}</CardContent>
@@ -1148,6 +1152,7 @@ export function DashboardPage() {
           </CardContent>
         </Card>
       </main>
+      <MobileBottomNav />
     </div>
   )
 }
