@@ -113,11 +113,18 @@ export function ExerciseProgressPage() {
 
         const weight = Number(row.weight_kg)
         const reps = Number(row.reps)
+        const sessionVolume = weight * reps
         const estimatedOneRepMax = weight * (1 + reps / 30)
-        const existing = dayMap.get(date) ?? { date, maxWeight: 0, estimatedOneRepMax: 0 }
+        const existing = dayMap.get(date) ?? {
+          date,
+          maxWeight: 0,
+          estimatedOneRepMax: 0,
+          sessionVolume: 0,
+        }
 
         existing.maxWeight = Math.max(existing.maxWeight, weight)
         existing.estimatedOneRepMax = Math.max(existing.estimatedOneRepMax, estimatedOneRepMax)
+        existing.sessionVolume += sessionVolume
         dayMap.set(date, existing)
 
         const existingRows = rowsBySession.get(row.session_id) ?? []
@@ -136,6 +143,7 @@ export function ExerciseProgressPage() {
           label: format(parseISO(point.date), 'MMM d'),
           maxWeight: round1(point.maxWeight),
           estimatedOneRepMax: round1(point.estimatedOneRepMax),
+          sessionVolume: round1(point.sessionVolume),
         }))
 
       setChartData(nextData)
@@ -271,7 +279,9 @@ export function ExerciseProgressPage() {
                       formatter={(value, name) =>
                         name === 'estimatedOneRepMax'
                           ? [`${value} kg`, 'Estimated 1RM']
-                          : [`${value} kg`, 'Max Weight']
+                          : name === 'maxWeight'
+                            ? [`${value} kg`, 'Max Weight']
+                            : [`${value} kg`, 'Session Volume']
                       }
                       labelFormatter={(_, payload) => payload?.[0]?.payload?.date ?? ''}
                     />
@@ -287,6 +297,14 @@ export function ExerciseProgressPage() {
                       type="monotone"
                       dataKey="maxWeight"
                       stroke="#059669"
+                      strokeWidth={3}
+                      dot={{ r: 3 }}
+                      activeDot={{ r: 5 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="sessionVolume"
+                      stroke="#d97706"
                       strokeWidth={3}
                       dot={{ r: 3 }}
                       activeDot={{ r: 5 }}
