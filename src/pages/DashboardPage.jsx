@@ -802,7 +802,7 @@ export function DashboardPage() {
                           <Input
                             type="number"
                             min="0"
-                            step="0.5"
+                            step="0.1"
                             inputMode="decimal"
                             value={setRow.weightKg}
                             onChange={(event) => updateSetRow(index, 'weightKg', event.target.value)}

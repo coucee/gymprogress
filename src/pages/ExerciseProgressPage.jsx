@@ -18,6 +18,8 @@ export function ExerciseProgressPage() {
   const [exercises, setExercises] = useState([])
   const [selectedExerciseId, setSelectedExerciseId] = useState('')
   const [chartData, setChartData] = useState([])
+  const [latestSets, setLatestSets] = useState([])
+  const [latestSetsDate, setLatestSetsDate] = useState('')
   const [chartLoading, setChartLoading] = useState(false)
   const [chartError, setChartError] = useState('')
 
@@ -80,6 +82,8 @@ export function ExerciseProgressPage() {
       const sessionRows = sessions ?? []
       if (sessionRows.length === 0) {
         setChartData([])
+        setLatestSets([])
+        setLatestSetsDate('')
         setChartLoading(false)
         return
       }
@@ -89,7 +93,7 @@ export function ExerciseProgressPage() {
 
       const { data: setRows, error: setError } = await supabase
         .from('workout_sets')
-        .select('session_id,weight_kg,reps')
+        .select('session_id,set_order,weight_kg,reps')
         .eq('exercise_id', Number(selectedExerciseId))
         .in('session_id', sessionIds)
 
@@ -102,6 +106,7 @@ export function ExerciseProgressPage() {
       }
 
       const dayMap = new Map()
+      const rowsBySession = new Map()
       for (const row of setRows ?? []) {
         const date = sessionDateMap.get(row.session_id)
         if (!date) continue
@@ -114,6 +119,14 @@ export function ExerciseProgressPage() {
         existing.maxWeight = Math.max(existing.maxWeight, weight)
         existing.estimatedOneRepMax = Math.max(existing.estimatedOneRepMax, estimatedOneRepMax)
         dayMap.set(date, existing)
+
+        const existingRows = rowsBySession.get(row.session_id) ?? []
+        existingRows.push({
+          setOrder: row.set_order,
+          weightKg: round1(weight),
+          reps,
+        })
+        rowsBySession.set(row.session_id, existingRows)
       }
 
       const nextData = [...dayMap.values()]
@@ -126,6 +139,20 @@ export function ExerciseProgressPage() {
         }))
 
       setChartData(nextData)
+
+      const latestSessionWithSets = [...sessionRows]
+        .sort((a, b) => b.session_date.localeCompare(a.session_date))
+        .find((session) => rowsBySession.has(session.id))
+
+      if (latestSessionWithSets) {
+        const rows = rowsBySession.get(latestSessionWithSets.id) ?? []
+        setLatestSets(rows.sort((a, b) => a.setOrder - b.setOrder))
+        setLatestSetsDate(latestSessionWithSets.session_date)
+      } else {
+        setLatestSets([])
+        setLatestSetsDate('')
+      }
+
       setChartLoading(false)
     }
 
@@ -213,6 +240,21 @@ export function ExerciseProgressPage() {
             </div>
           </CardHeader>
           <CardContent>
+            {latestSets.length > 0 ? (
+              <div className="mb-4 rounded-md border border-slate-200 bg-slate-50 p-3">
+                <p className="text-sm font-medium text-slate-900">
+                  Last logged sets {latestSetsDate ? `(${latestSetsDate})` : ''}
+                </p>
+                <ul className="mt-2 space-y-1 text-sm text-slate-700">
+                  {latestSets.map((setRow) => (
+                    <li key={`last-set-${setRow.setOrder}`}>
+                      Set {setRow.setOrder}: {setRow.weightKg} kg x {setRow.reps}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
             {chartError ? <p className="text-sm text-red-700">{chartError}</p> : null}
 
             {chartLoading ? (
