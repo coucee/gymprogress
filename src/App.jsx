@@ -3,9 +3,11 @@ import { ProtectedRoute } from './components/ProtectedRoute.jsx'
 import { PublicOnlyRoute } from './components/PublicOnlyRoute.jsx'
 import { DashboardPage } from './pages/DashboardPage.jsx'
 import { ExerciseProgressPage } from './pages/ExerciseProgressPage.jsx'
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage.jsx'
 import { HabitsPage } from './pages/HabitsPage.jsx'
 import { PlansPage } from './pages/PlansPage.jsx'
 import { LoginPage } from './pages/LoginPage.jsx'
+import { ResetPasswordPage } from './pages/ResetPasswordPage.jsx'
 import { SignupPage } from './pages/SignupPage.jsx'
 
 function App() {
@@ -68,6 +70,15 @@ function App() {
             </PublicOnlyRoute>
           }
         />
+        <Route
+          path="/forgot-password"
+          element={
+            <PublicOnlyRoute>
+              <ForgotPasswordPage />
+            </PublicOnlyRoute>
+          }
+        />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

@@ -1,34 +1,36 @@
-import { Dumbbell, LogIn } from 'lucide-react'
+import { Dumbbell, KeyRound } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Button } from '../components/ui/button.jsx'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card.jsx'
 import { Input } from '../components/ui/input.jsx'
 import { Label } from '../components/ui/label.jsx'
-import { useAuth } from '../state/AuthContext.jsx'
+import { supabase } from '../lib/supabase.js'
 
-export function LoginPage() {
-  const navigate = useNavigate()
-  const { signIn } = useAuth()
+export function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(event) {
     event.preventDefault()
     setError('')
+    setMessage('')
     setLoading(true)
 
-    const { error: signInError } = await signIn({ email, password })
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
 
-    if (signInError) {
-      setError(signInError.message)
+    if (resetError) {
+      setError(resetError.message)
       setLoading(false)
       return
     }
 
-    navigate('/dashboard', { replace: true })
+    setMessage('If this email exists, a password reset link was sent.')
+    setLoading(false)
   }
 
   return (
@@ -39,14 +41,14 @@ export function LoginPage() {
             <Dumbbell className="h-6 w-6 text-blue-600" />
             <CardTitle className="text-2xl">GymProgress</CardTitle>
           </div>
-          <p className="text-sm text-slate-600">Log in</p>
+          <p className="text-sm text-slate-600">Reset your password</p>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-1.5">
-              <Label htmlFor="login-email">Email</Label>
+              <Label htmlFor="forgot-email">Email</Label>
               <Input
-                id="login-email"
+                id="forgot-email"
                 type="email"
                 required
                 value={email}
@@ -55,37 +57,19 @@ export function LoginPage() {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label htmlFor="login-password">Password</Label>
-              <Input
-                id="login-password"
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="******"
-              />
-            </div>
-
-            <div className="text-right">
-              <Link className="text-sm font-medium text-blue-700 hover:text-blue-800" to="/forgot-password">
-                Forgot password?
-              </Link>
-            </div>
-
             {error ? <p className="text-sm text-red-600">{error}</p> : null}
+            {message ? <p className="text-sm text-emerald-700">{message}</p> : null}
 
             <Button className="w-full" type="submit" disabled={loading}>
-              <LogIn className="h-4 w-4" />
-              {loading ? 'Logging in...' : 'Log in'}
+              <KeyRound className="h-4 w-4" />
+              {loading ? 'Sending...' : 'Send reset email'}
             </Button>
           </form>
 
           <p className="mt-4 text-sm text-slate-600">
-            No account yet?{' '}
-            <Link className="font-medium text-blue-700 hover:text-blue-800" to="/signup">
-              Create one
+            Remembered it?{' '}
+            <Link className="font-medium text-blue-700 hover:text-blue-800" to="/login">
+              Back to login
             </Link>
           </p>
         </CardContent>
